@@ -6,9 +6,11 @@ import type {
   Evidence,
   RecommendedAction,
   AnalysisResult,
+  PipelineMetadata,
 } from "@/lib/schemas/churn";
 import { type Result, ok } from "@/lib/errors";
 import { executeTool } from "@/lib/tools/executor";
+import { setPipelineStep } from "@/lib/db/store";
 
 const DEMO_SCENARIOS: DemoScenario[] = [
   {
@@ -219,14 +221,23 @@ function sleep(ms: number): Promise<void> {
 }
 
 export async function analyzeChurnDemo(
-  event: ChurnEvent
+  event: ChurnEvent,
+  existingAnalysisId?: string
 ): Promise<Result<AnalysisResult>> {
   const startTime = Date.now();
-  const analysisId = uuid();
+  const analysisId = existingAnalysisId ?? uuid();
 
-  // Simulate AI processing delay (3-5 seconds)
-  const delay = 3000 + Math.random() * 2000;
-  await sleep(delay);
+  // Simulate triage step
+  if (existingAnalysisId) setPipelineStep(existingAnalysisId, "triaging");
+  const triageStart = Date.now();
+  await sleep(800 + Math.random() * 400);
+  const triageDurationMs = Date.now() - triageStart;
+
+  // Simulate diagnosis step
+  if (existingAnalysisId) setPipelineStep(existingAnalysisId, "diagnosing");
+  const diagnosisStart = Date.now();
+  await sleep(1500 + Math.random() * 1000);
+  const diagnosisDurationMs = Date.now() - diagnosisStart;
 
   const scenario = pickScenario(event);
 
@@ -240,6 +251,8 @@ export async function analyzeChurnDemo(
   };
 
   // Execute actions through the real executor (mock integrations)
+  if (existingAnalysisId) setPipelineStep(existingAnalysisId, "executing_actions");
+  const actionsStart = Date.now();
   const executedActions = [];
   for (const action of dossier.recommendedActions) {
     const toolName =
@@ -272,6 +285,23 @@ export async function analyzeChurnDemo(
       executedAt: result.executedAt,
     });
   }
+  const actionsDurationMs = Date.now() - actionsStart;
+
+  if (existingAnalysisId) setPipelineStep(existingAnalysisId, "complete");
+
+  const pipelineMetadata: PipelineMetadata = {
+    triageResult: {
+      worthDeepAnalysis: true,
+      reason: "Demo mode — simulated triage assessment",
+      urgency: "high",
+      estimatedSaveProbability: scenario.saveProbability,
+    },
+    diagnosisModel: "flash",
+    triageDurationMs,
+    diagnosisDurationMs,
+    actionsDurationMs,
+    pipelineSource: "demo",
+  };
 
   const analysisResult: AnalysisResult = {
     id: analysisId,
@@ -282,6 +312,7 @@ export async function analyzeChurnDemo(
     createdAt: new Date(startTime).toISOString(),
     completedAt: new Date().toISOString(),
     processingTimeMs: Date.now() - startTime,
+    pipelineMetadata,
   };
 
   return ok(analysisResult);

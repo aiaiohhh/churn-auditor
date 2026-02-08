@@ -64,6 +64,32 @@ export const ChurnDossierSchema = z.object({
 });
 export type ChurnDossier = z.infer<typeof ChurnDossierSchema>;
 
+// === Pipeline Metadata (tracks AI model routing) ===
+export const PipelineStepEnum = z.enum([
+  "triaging",
+  "diagnosing",
+  "executing_actions",
+  "complete",
+]);
+export type PipelineStep = z.infer<typeof PipelineStepEnum>;
+
+export const PipelineMetadataSchema = z.object({
+  triageResult: z
+    .object({
+      worthDeepAnalysis: z.boolean(),
+      reason: z.string(),
+      urgency: z.enum(["urgent", "high", "medium", "low"]),
+      estimatedSaveProbability: z.number(),
+    })
+    .optional(),
+  diagnosisModel: z.enum(["flash", "pro"]),
+  triageDurationMs: z.number().optional(),
+  diagnosisDurationMs: z.number().optional(),
+  actionsDurationMs: z.number().optional(),
+  pipelineSource: z.enum(["gemini", "demo"]),
+});
+export type PipelineMetadata = z.infer<typeof PipelineMetadataSchema>;
+
 // === Full Analysis Result (stored/displayed) ===
 export const AnalysisResultSchema = z.object({
   id: z.string().uuid(),
@@ -81,6 +107,7 @@ export const AnalysisResultSchema = z.object({
   createdAt: z.string().datetime(),
   completedAt: z.string().datetime().optional(),
   processingTimeMs: z.number().optional(),
+  pipelineMetadata: PipelineMetadataSchema.optional(),
 });
 export type AnalysisResult = z.infer<typeof AnalysisResultSchema>;
 
@@ -120,3 +147,11 @@ export type ExecuteActionResponse = z.infer<typeof ExecuteActionResponseSchema>;
 
 // GET /api/analyze/[id] - returns AnalysisResult
 // GET /api/analyze - returns AnalysisResult[]
+
+// === Waitlist ===
+export const WaitlistSchema = z.object({
+  email: z.string().email(),
+  companyName: z.string().optional(),
+  role: z.string().optional(),
+});
+export type WaitlistEntry = z.infer<typeof WaitlistSchema>;

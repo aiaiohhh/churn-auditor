@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
-import type { AnalysisResult, ChurnCause, Priority } from "@/lib/schemas/churn";
+import type { ChurnCause, Priority, PipelineStep } from "@/lib/schemas/churn";
+import type { AnalysisWithStep } from "@/hooks/useAnalysis";
 import { cn } from "@/lib/utils";
 
 const causeColors: Record<ChurnCause, { bg: string; text: string; label: string }> = {
@@ -38,8 +39,20 @@ const actionTypeLabels: Record<string, string> = {
   manual_review: "Manual Review",
 };
 
+// Pipeline step ordering for progress tracking
+const PIPELINE_STEPS = ["triaging", "diagnosing", "executing_actions", "complete"] as const;
+
+function getStepState(step: typeof PIPELINE_STEPS[number], currentStep?: PipelineStep): "pending" | "active" | "completed" {
+  if (!currentStep) return step === "triaging" ? "active" : "pending";
+  const currentIdx = PIPELINE_STEPS.indexOf(currentStep);
+  const stepIdx = PIPELINE_STEPS.indexOf(step);
+  if (stepIdx < currentIdx) return "completed";
+  if (stepIdx === currentIdx) return currentStep === "complete" ? "completed" : "active";
+  return "pending";
+}
+
 interface DossierViewProps {
-  analysis: AnalysisResult | null;
+  analysis: AnalysisWithStep | null;
 }
 
 export function DossierView({ analysis }: DossierViewProps) {
@@ -62,27 +75,7 @@ export function DossierView({ analysis }: DossierViewProps) {
   }
 
   if (analysis.status === "pending" || analysis.status === "analyzing") {
-    return (
-      <div className="flex h-full flex-col items-center justify-center py-24 text-center">
-        <div className="relative mb-6">
-          <div className="h-16 w-16 animate-spin-slow rounded-full border-2 border-primary/20 border-t-primary" />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6 text-primary" stroke="currentColor" strokeWidth={2}>
-              <path d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>
-        </div>
-        <p className="text-sm font-medium text-foreground">Analyzing churn event...</p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          AI is diagnosing root causes and generating recovery actions
-        </p>
-        <div className="mt-4 w-48">
-          <div className="h-1 overflow-hidden rounded-full bg-muted">
-            <div className="h-full animate-shimmer rounded-full bg-primary/40" style={{ width: "100%" }} />
-          </div>
-        </div>
-      </div>
-    );
+    return <PipelineProgress analysis={analysis} />;
   }
 
   if (analysis.status === "failed") {
@@ -124,6 +117,21 @@ export function DossierView({ analysis }: DossierViewProps) {
           <p className="text-xs text-muted-foreground">{analysis.event.plan} plan</p>
         </div>
       </div>
+
+      {/* Processing time */}
+      {analysis.processingTimeMs && (
+        <p className="text-xs text-muted-foreground">
+          Analyzed in{" "}
+          <span className="font-mono font-semibold text-foreground">
+            {(analysis.processingTimeMs / 1000).toFixed(1)}s
+          </span>
+        </p>
+      )}
+
+      {/* Pipeline Summary Card */}
+      {analysis.pipelineMetadata && (
+        <PipelineSummary metadata={analysis.pipelineMetadata} />
+      )}
 
       <Separator className="bg-border/30" />
 
@@ -297,5 +305,216 @@ export function DossierView({ analysis }: DossierViewProps) {
         )}
       </div>
     </div>
+  );
+}
+
+// ─── Pipeline Progress (Analyzing State) ──────────────────────────────
+
+function PipelineProgress({ analysis }: { analysis: AnalysisWithStep }) {
+  const currentStep = analysis.pipelineStep;
+
+  const steps = [
+    {
+      key: "triaging" as const,
+      label: "Triage",
+      description: "Assessing churn severity with Flash...",
+      model: "Flash",
+      modelColor: "bg-gemini-blue/10 text-gemini-blue border-gemini-blue/30",
+    },
+    {
+      key: "diagnosing" as const,
+      label: "Deep Diagnosis",
+      description: "Diagnosing root causes...",
+      model: "Pro",
+      modelColor: "bg-gemini-purple/10 text-gemini-purple border-gemini-purple/30",
+    },
+    {
+      key: "executing_actions" as const,
+      label: "Execute Actions",
+      description: "Running recovery actions...",
+      model: null,
+      modelColor: "",
+    },
+  ];
+
+  return (
+    <div className="flex flex-col items-center py-12">
+      <div className="mb-8 text-center">
+        <h3 className="text-sm font-semibold text-foreground">
+          Analyzing {analysis.event.customerName}
+        </h3>
+        <p className="mt-1 text-xs text-muted-foreground">
+          ${analysis.event.mrr}/mo &middot; {analysis.event.plan}
+        </p>
+      </div>
+
+      <div className="w-full max-w-xs space-y-0">
+        {steps.map((step, i) => {
+          const state = getStepState(step.key, currentStep);
+
+          return (
+            <div key={step.key} className="relative">
+              {/* Connecting line */}
+              {i < steps.length - 1 && (
+                <div className="absolute left-[15px] top-[32px] h-8 w-px">
+                  <div
+                    className={cn(
+                      "h-full w-full transition-all duration-500",
+                      state === "completed"
+                        ? "bg-gemini-blue"
+                        : "bg-border/50"
+                    )}
+                  />
+                </div>
+              )}
+
+              <div className="flex items-start gap-3 pb-8">
+                {/* Step indicator */}
+                <div className="relative flex h-[30px] w-[30px] shrink-0 items-center justify-center">
+                  {state === "active" ? (
+                    <div className="h-[30px] w-[30px] animate-spin-slow rounded-full border-2 border-gemini-blue/30 border-t-gemini-blue" />
+                  ) : state === "completed" ? (
+                    <div className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-gemini-blue/10 ring-1 ring-gemini-blue/30">
+                      <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 text-gemini-blue" stroke="currentColor" strokeWidth={2.5}>
+                        <path d="M4.5 12.75l6 6 9-13.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </div>
+                  ) : (
+                    <div className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-muted/30 ring-1 ring-border/50">
+                      <div className="h-2 w-2 rounded-full bg-muted-foreground/30" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Step content */}
+                <div className="min-w-0 flex-1 pt-1">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={cn(
+                        "text-sm font-medium",
+                        state === "active"
+                          ? "text-foreground"
+                          : state === "completed"
+                            ? "text-foreground"
+                            : "text-muted-foreground/60"
+                      )}
+                    >
+                      {step.label}
+                    </span>
+                    {step.model && (
+                      <Badge
+                        variant="outline"
+                        className={cn("text-[10px] px-1.5 py-0", step.modelColor)}
+                      >
+                        {step.model}
+                      </Badge>
+                    )}
+                  </div>
+                  {state === "active" && (
+                    <p className="mt-0.5 text-xs text-muted-foreground animate-fade-in-up">
+                      {step.description}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Pipeline Summary Card (Complete State) ────────────────────────────
+
+function PipelineSummary({ metadata }: { metadata: NonNullable<AnalysisWithStep["pipelineMetadata"]> }) {
+  const isGemini = metadata.pipelineSource === "gemini";
+  const isProModel = metadata.diagnosisModel === "pro";
+
+  return (
+    <Card className="glass-card border-0 overflow-hidden">
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Gemini Pipeline
+          </span>
+          <Badge
+            variant="outline"
+            className={cn(
+              "text-[10px] px-1.5 py-0",
+              isGemini
+                ? "bg-green-500/10 text-green-600 border-green-500/30"
+                : "bg-yellow-500/10 text-yellow-600 border-yellow-500/30"
+            )}
+          >
+            {isGemini ? "Gemini API" : "Demo Mode"}
+          </Badge>
+        </div>
+
+        {/* Model flow: Flash → Pro/Flash */}
+        <div className="flex items-center gap-2 mb-3">
+          <Badge
+            variant="outline"
+            className="text-[10px] px-2 py-0.5 bg-gemini-blue/10 text-gemini-blue border-gemini-blue/30"
+          >
+            Flash
+          </Badge>
+          <span className="text-muted-foreground/50 text-xs">Triage</span>
+          <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5 text-muted-foreground/40" stroke="currentColor" strokeWidth={2}>
+            <path d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <Badge
+            variant="outline"
+            className={cn(
+              "text-[10px] px-2 py-0.5",
+              isProModel
+                ? "bg-gemini-purple/10 text-gemini-purple border-gemini-purple/30"
+                : "bg-gemini-blue/10 text-gemini-blue border-gemini-blue/30"
+            )}
+          >
+            {isProModel ? "Pro" : "Flash"}
+          </Badge>
+          <span className="text-muted-foreground/50 text-xs">Diagnosis</span>
+        </div>
+
+        {/* Per-step durations */}
+        <div className="grid grid-cols-3 gap-3 text-center">
+          {metadata.triageDurationMs != null && (
+            <div>
+              <p className="font-mono text-xs font-semibold text-foreground">
+                {(metadata.triageDurationMs / 1000).toFixed(1)}s
+              </p>
+              <p className="text-[10px] text-muted-foreground">Triage</p>
+            </div>
+          )}
+          {metadata.diagnosisDurationMs != null && (
+            <div>
+              <p className="font-mono text-xs font-semibold text-foreground">
+                {(metadata.diagnosisDurationMs / 1000).toFixed(1)}s
+              </p>
+              <p className="text-[10px] text-muted-foreground">Diagnosis</p>
+            </div>
+          )}
+          {metadata.actionsDurationMs != null && (
+            <div>
+              <p className="font-mono text-xs font-semibold text-foreground">
+                {(metadata.actionsDurationMs / 1000).toFixed(1)}s
+              </p>
+              <p className="text-[10px] text-muted-foreground">Actions</p>
+            </div>
+          )}
+        </div>
+
+        {/* Triage reason */}
+        {metadata.triageResult?.reason && (
+          <div className="mt-3 rounded-md bg-muted/20 p-2">
+            <p className="text-[11px] text-muted-foreground">
+              <span className="font-semibold text-foreground/80">Triage:</span>{" "}
+              {metadata.triageResult.reason}
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

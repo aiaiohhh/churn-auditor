@@ -3,6 +3,7 @@ import type {
   ChurnEvent,
   ChurnDossier,
   AnalysisResult,
+  PipelineMetadata,
 } from "@/lib/schemas/churn";
 import { ChurnDossierSchema } from "@/lib/schemas/churn";
 import { type Result, ok, err } from "@/lib/errors";
@@ -16,23 +17,25 @@ import {
 } from "@/lib/prompts/diagnosis";
 import { executeTool, type ToolCallResult } from "@/lib/tools/executor";
 import { analyzeChurnDemo } from "@/lib/gemini/demo-fallback";
+import { setPipelineStep } from "@/lib/db/store";
 
-const PIPELINE_TIMEOUT_MS = 10_000;
+const PIPELINE_TIMEOUT_MS = 55_000;
 
 export async function analyzeChurn(
-  event: ChurnEvent
+  event: ChurnEvent,
+  analysisId?: string
 ): Promise<Result<AnalysisResult>> {
   // Auto-fallback to demo mode when API key is not configured
   if (!process.env.GEMINI_API_KEY) {
     console.log("[ChurnAuditor] No GEMINI_API_KEY set, using demo fallback");
-    return analyzeChurnDemo(event);
+    return analyzeChurnDemo(event, analysisId);
   }
 
   // Run the real pipeline with a timeout safety net.
   // If Gemini is slow or down, fall back to demo mode so the app always works.
   try {
     const result = await Promise.race([
-      analyzeChurnReal(event),
+      analyzeChurnReal(event, analysisId),
       new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error("Gemini pipeline timed out")), PIPELINE_TIMEOUT_MS)
       ),
@@ -41,34 +44,66 @@ export async function analyzeChurn(
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Unknown error";
     console.warn(`[ChurnAuditor] Gemini pipeline failed (${msg}), falling back to demo`);
-    return analyzeChurnDemo(event);
+    return analyzeChurnDemo(event, analysisId);
   }
 }
 
 async function analyzeChurnReal(
-  event: ChurnEvent
+  event: ChurnEvent,
+  analysisId?: string
 ): Promise<Result<AnalysisResult>> {
   const startTime = Date.now();
-  const analysisId = uuid();
+  const id = analysisId ?? uuid();
 
   // Step 1: Triage with Flash
+  if (analysisId) setPipelineStep(analysisId, "triaging");
+  const triageStart = Date.now();
   const triageResult = await runTriage(event);
+  const triageDurationMs = Date.now() - triageStart;
   if (!triageResult.ok) return err(`Triage failed: ${triageResult.error}`);
 
   const triage = triageResult.value;
+  console.log(
+    `[ChurnAuditor] Triage complete (${triageDurationMs}ms): worthDeepAnalysis=${triage.worthDeepAnalysis}, urgency=${triage.urgency}`
+  );
 
   // Step 2: Deep diagnosis with Pro (or Flash for low-priority)
+  if (analysisId) setPipelineStep(analysisId, "diagnosing");
+  const diagnosisStart = Date.now();
   const model = triage.worthDeepAnalysis ? "pro" : "flash";
   const dossierResult = await runDiagnosis(event, model);
+  const diagnosisDurationMs = Date.now() - diagnosisStart;
   if (!dossierResult.ok) return err(`Diagnosis failed: ${dossierResult.error}`);
 
   const dossier = dossierResult.value;
+  console.log(
+    `[ChurnAuditor] Diagnosis complete (${diagnosisDurationMs}ms) using ${model}`
+  );
 
   // Step 3: Execute recommended actions
+  if (analysisId) setPipelineStep(analysisId, "executing_actions");
+  const actionsStart = Date.now();
   const executedActions = await executeActions(dossier, event);
+  const actionsDurationMs = Date.now() - actionsStart;
+
+  if (analysisId) setPipelineStep(analysisId, "complete");
+
+  const pipelineMetadata: PipelineMetadata = {
+    triageResult: {
+      worthDeepAnalysis: triage.worthDeepAnalysis,
+      reason: triage.reason,
+      urgency: triage.urgency,
+      estimatedSaveProbability: triage.estimatedSaveProbability,
+    },
+    diagnosisModel: model,
+    triageDurationMs,
+    diagnosisDurationMs,
+    actionsDurationMs,
+    pipelineSource: "gemini",
+  };
 
   const result: AnalysisResult = {
-    id: analysisId,
+    id,
     event,
     dossier,
     status: "complete",
@@ -81,6 +116,7 @@ async function analyzeChurnReal(
     createdAt: new Date(startTime).toISOString(),
     completedAt: new Date().toISOString(),
     processingTimeMs: Date.now() - startTime,
+    pipelineMetadata,
   };
 
   return ok(result);

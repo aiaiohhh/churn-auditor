@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAnalysis } from "@/lib/db/store";
+import { getAnalysis, getPipelineStep } from "@/lib/db/store";
 
 export async function GET(
   _req: NextRequest,
@@ -15,5 +15,8 @@ export async function GET(
     );
   }
 
-  return NextResponse.json(analysis);
+  return NextResponse.json({
+    ...analysis,
+    pipelineStep: getPipelineStep(id),
+  });
 }

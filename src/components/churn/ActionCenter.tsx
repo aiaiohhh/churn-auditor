@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import type { AnalysisResult } from "@/lib/schemas/churn";
+import type { AnalysisWithStep } from "@/hooks/useAnalysis";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 
@@ -50,7 +50,7 @@ const actionTypeLabels: Record<string, string> = {
 };
 
 interface ActionCenterProps {
-  analysis: AnalysisResult | null;
+  analysis: AnalysisWithStep | null;
 }
 
 export function ActionCenter({ analysis }: ActionCenterProps) {
