@@ -1,23 +1,14 @@
 "use client";
 
-import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import type { ChurnCause, Priority, PipelineStep } from "@/lib/schemas/churn";
+import type { Priority, PipelineStep } from "@/lib/schemas/churn";
 import type { AnalysisWithStep } from "@/hooks/useAnalysis";
 import { cn } from "@/lib/utils";
-
-const causeColors: Record<ChurnCause, { bg: string; text: string; label: string }> = {
-  pricing: { bg: "bg-orange-500/10", text: "text-orange-600", label: "Pricing" },
-  bugs: { bg: "bg-red-500/10", text: "text-red-600", label: "Bugs" },
-  support: { bg: "bg-yellow-500/10", text: "text-yellow-600", label: "Support" },
-  competition: { bg: "bg-purple-500/10", text: "text-purple-600", label: "Competition" },
-  features: { bg: "bg-blue-500/10", text: "text-blue-600", label: "Missing Features" },
-  onboarding: { bg: "bg-cyan-500/10", text: "text-cyan-600", label: "Onboarding" },
-  other: { bg: "bg-gray-500/10", text: "text-gray-600", label: "Other" },
-};
+import { LiveTimer } from "@/components/churn/LiveTimer";
+import { ConfidenceGauge } from "@/components/churn/ConfidenceGauge";
+import { ReasoningTrace } from "@/components/churn/ReasoningTrace";
 
 const priorityConfig: Record<Priority, { className: string; label: string }> = {
   urgent: { className: "bg-red-500/10 text-red-600 border-red-500/30", label: "Urgent" },
@@ -56,8 +47,6 @@ interface DossierViewProps {
 }
 
 export function DossierView({ analysis }: DossierViewProps) {
-  const [reasoningOpen, setReasoningOpen] = useState(false);
-
   if (!analysis) {
     return (
       <div className="flex h-full flex-col items-center justify-center rounded-xl border border-dashed border-border/50 py-24 text-center">
@@ -75,7 +64,12 @@ export function DossierView({ analysis }: DossierViewProps) {
   }
 
   if (analysis.status === "pending" || analysis.status === "analyzing") {
-    return <PipelineProgress analysis={analysis} />;
+    return (
+      <div className="space-y-4">
+        <LiveTimer createdAt={analysis.createdAt} />
+        <PipelineProgress analysis={analysis} />
+      </div>
+    );
   }
 
   if (analysis.status === "failed") {
@@ -95,9 +89,6 @@ export function DossierView({ analysis }: DossierViewProps) {
   }
 
   const { dossier } = analysis;
-  const cause = causeColors[dossier.primaryCause];
-  const confidencePercent = Math.round(dossier.confidence * 100);
-  const savePercent = Math.round(dossier.saveProbability * 100);
 
   return (
     <div className="animate-fade-in-up space-y-5">
@@ -118,15 +109,12 @@ export function DossierView({ analysis }: DossierViewProps) {
         </div>
       </div>
 
-      {/* Processing time */}
-      {analysis.processingTimeMs && (
-        <p className="text-xs text-muted-foreground">
-          Analyzed in{" "}
-          <span className="font-mono font-semibold text-foreground">
-            {(analysis.processingTimeMs / 1000).toFixed(1)}s
-          </span>
-        </p>
-      )}
+      {/* Live Timer */}
+      <LiveTimer
+        createdAt={analysis.createdAt}
+        completedAt={analysis.completedAt}
+        processingTimeMs={analysis.processingTimeMs}
+      />
 
       {/* Pipeline Summary Card */}
       {analysis.pipelineMetadata && (
@@ -135,81 +123,12 @@ export function DossierView({ analysis }: DossierViewProps) {
 
       <Separator className="bg-border/30" />
 
-      {/* Primary Cause + Confidence Row */}
-      <div className="grid grid-cols-2 gap-4">
-        <Card className="glass-card border-0">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">
-              Primary Cause
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Badge className={cn("text-sm px-3 py-1 border", cause.bg, cause.text)}>
-              {cause.label}
-            </Badge>
-          </CardContent>
-        </Card>
-
-        <Card className="glass-card border-0">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">
-              Confidence
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-end gap-2">
-              <span className="font-mono text-2xl font-bold text-foreground">
-                {confidencePercent}
-              </span>
-              <span className="mb-0.5 text-xs text-muted-foreground">%</span>
-            </div>
-            <Progress
-              value={confidencePercent}
-              className="mt-2 h-1.5 bg-muted/50"
-            />
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Save Probability Gauge */}
-      <Card className="glass-card border-0">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-xs font-medium text-muted-foreground">
-            Save Probability
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-4">
-            <div className="flex-1">
-              <div className="relative h-3 overflow-hidden rounded-full bg-muted/50">
-                <div
-                  className={cn(
-                    "animate-progress-fill absolute inset-y-0 left-0 rounded-full transition-all",
-                    savePercent >= 60
-                      ? "bg-gradient-to-r from-green-600 to-green-400"
-                      : savePercent >= 30
-                        ? "bg-gradient-to-r from-yellow-600 to-yellow-400"
-                        : "bg-gradient-to-r from-red-600 to-red-400"
-                  )}
-                  style={{ width: `${savePercent}%` }}
-                />
-              </div>
-            </div>
-            <span
-              className={cn(
-                "font-mono text-xl font-bold",
-                savePercent >= 60
-                  ? "text-green-600"
-                  : savePercent >= 30
-                    ? "text-yellow-600"
-                    : "text-red-600"
-              )}
-            >
-              {savePercent}%
-            </span>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Confidence Gauge (replaces cause + confidence + save probability cards) */}
+      <ConfidenceGauge
+        confidence={dossier.confidence}
+        saveProbability={dossier.saveProbability}
+        primaryCause={dossier.primaryCause}
+      />
 
       {/* Evidence Cards */}
       <div>
@@ -279,31 +198,11 @@ export function DossierView({ analysis }: DossierViewProps) {
         </div>
       </div>
 
-      {/* Reasoning (Collapsible) */}
-      <div>
-        <button
-          onClick={() => setReasoningOpen(!reasoningOpen)}
-          className="flex w-full items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            className={cn("h-3.5 w-3.5 transition-transform", reasoningOpen && "rotate-90")}
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path d="M8.25 4.5l7.5 7.5-7.5 7.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          AI Reasoning
-        </button>
-        {reasoningOpen && (
-          <div className="mt-3 animate-fade-in-up rounded-lg bg-muted/20 p-4">
-            <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
-              {dossier.reasoning}
-            </p>
-          </div>
-        )}
-      </div>
+      {/* AI Reasoning Trace */}
+      <ReasoningTrace
+        reasoning={dossier.reasoning}
+        confidence={dossier.confidence}
+      />
     </div>
   );
 }
