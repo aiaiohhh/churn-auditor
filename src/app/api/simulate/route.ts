@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { v4 as uuid } from "uuid";
 import type { ChurnEvent } from "@/lib/schemas/churn";
 import { createAnalysis, updateAnalysis } from "@/lib/db/store";
@@ -80,8 +80,8 @@ export async function POST() {
   const event = generateChurnEvent();
   const analysis = createAnalysis(event);
 
-  // Fire-and-forget: run analysis in background
-  runAnalysis(analysis.id, event).catch(console.error);
+  // Run analysis after response is sent (Vercel keeps function alive for after() tasks)
+  after(runAnalysis(analysis.id, event));
 
   return NextResponse.json(
     { analysisId: analysis.id, event, status: "analyzing" },
