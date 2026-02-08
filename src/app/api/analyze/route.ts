@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { AnalyzeRequestSchema, type ChurnEvent } from "@/lib/schemas/churn";
 import {
   createAnalysis,
@@ -30,8 +30,8 @@ export async function POST(req: NextRequest) {
     return streamAnalysis(analysis.id, parsed.data.event);
   }
 
-  // Non-streaming: run async, return immediately
-  runAnalysisPipeline(analysis.id, parsed.data.event).catch(console.error);
+  // Run analysis after response is sent (Vercel keeps function alive for after() tasks)
+  after(runAnalysisPipeline(analysis.id, parsed.data.event));
 
   return NextResponse.json(
     { analysisId: analysis.id, status: analysis.status },

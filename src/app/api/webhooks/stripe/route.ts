@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import Stripe from "stripe";
 import { v4 as uuid } from "uuid";
 import type { ChurnEvent } from "@/lib/schemas/churn";
@@ -56,8 +56,8 @@ export async function POST(req: NextRequest) {
   const churnEvent = extractChurnEvent(event);
   const analysis = createAnalysis(churnEvent);
 
-  // Trigger async analysis (fire-and-forget)
-  runAnalysis(analysis.id, churnEvent).catch(console.error);
+  // Run analysis after response is sent (Vercel keeps function alive for after() tasks)
+  after(runAnalysis(analysis.id, churnEvent));
 
   return NextResponse.json(
     { received: true, analysisId: analysis.id },

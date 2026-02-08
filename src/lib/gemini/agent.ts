@@ -17,6 +17,8 @@ import {
 import { executeTool, type ToolCallResult } from "@/lib/tools/executor";
 import { analyzeChurnDemo } from "@/lib/gemini/demo-fallback";
 
+const PIPELINE_TIMEOUT_MS = 25_000;
+
 export async function analyzeChurn(
   event: ChurnEvent
 ): Promise<Result<AnalysisResult>> {
@@ -26,6 +28,26 @@ export async function analyzeChurn(
     return analyzeChurnDemo(event);
   }
 
+  // Run the real pipeline with a timeout safety net.
+  // If Gemini is slow or down, fall back to demo mode so the app always works.
+  try {
+    const result = await Promise.race([
+      analyzeChurnReal(event),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Gemini pipeline timed out")), PIPELINE_TIMEOUT_MS)
+      ),
+    ]);
+    return result;
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : "Unknown error";
+    console.warn(`[ChurnAuditor] Gemini pipeline failed (${msg}), falling back to demo`);
+    return analyzeChurnDemo(event);
+  }
+}
+
+async function analyzeChurnReal(
+  event: ChurnEvent
+): Promise<Result<AnalysisResult>> {
   const startTime = Date.now();
   const analysisId = uuid();
 
