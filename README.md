@@ -19,8 +19,8 @@ The entire pipeline runs in under 10 seconds, giving your team an actionable dos
 
 ChurnAuditor uses a **two-stage AI pipeline** with model routing:
 
-- **Triage (Gemini 2.0 Flash)**: Fast assessment at temperature 0.3 determines if the churn event warrants deep analysis. Uses structured JSON output with a defined response schema for reliable parsing.
-- **Diagnosis (Gemini 2.5 Pro / Flash)**: Full root cause analysis at temperature 0.4 with structured output producing a typed `ChurnDossier` including primary cause, confidence score, evidence array, save probability, and recommended actions. High-value churns route to Pro; lower-priority to Flash.
+- **Triage (Gemini 3 Flash)**: Fast assessment at temperature 0.3 determines if the churn event warrants deep analysis. Uses structured JSON output with a defined response schema for reliable parsing.
+- **Diagnosis (Gemini 3 Pro / Flash)**: Full root cause analysis at temperature 0.4 with structured output producing a typed `ChurnDossier` including primary cause, confidence score, evidence array, save probability, and recommended actions. High-value churns route to Pro; lower-priority to Flash.
 - **Resilient fallback**: If Gemini is unavailable or times out (25s), the pipeline auto-falls back to demo mode so the app always works.
 
 All AI responses are validated against Zod schemas for type safety.
@@ -70,7 +70,7 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) and click **Simulate Cancellation** to trigger an AI analysis.
+Open [https://churn-auditor.vercel.app](https://churn-auditor.vercel.app/)) and click **Simulate Cancellation** to trigger an AI analysis.
 
 ### Environment Variables
 
