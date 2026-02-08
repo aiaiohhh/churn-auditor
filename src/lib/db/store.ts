@@ -1,10 +1,21 @@
-import type { AnalysisResult, ChurnEvent } from "@/lib/schemas/churn";
+import type { AnalysisResult, ChurnEvent, PipelineStep } from "@/lib/schemas/churn";
 import { v4 as uuid } from "uuid";
 
 // In-memory store for hackathon MVP
 // Replace with Supabase/Postgres for production
 
 const analyses = new Map<string, AnalysisResult>();
+
+// Pipeline step tracking (separate from analysis to avoid race conditions)
+const pipelineSteps = new Map<string, PipelineStep>();
+
+export function setPipelineStep(analysisId: string, step: PipelineStep): void {
+  pipelineSteps.set(analysisId, step);
+}
+
+export function getPipelineStep(analysisId: string): PipelineStep | undefined {
+  return pipelineSteps.get(analysisId);
+}
 
 export function createAnalysis(event: ChurnEvent): AnalysisResult {
   const analysis: AnalysisResult = {

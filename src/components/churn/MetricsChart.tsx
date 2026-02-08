@@ -1,7 +1,8 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { AnalysisResult, ChurnCause } from "@/lib/schemas/churn";
+import type { ChurnCause } from "@/lib/schemas/churn";
+import type { AnalysisWithStep } from "@/hooks/useAnalysis";
 import { cn } from "@/lib/utils";
 
 const causeColors: Record<ChurnCause, string> = {
@@ -25,7 +26,7 @@ const causeLabels: Record<ChurnCause, string> = {
 };
 
 interface MetricsChartProps {
-  analyses: AnalysisResult[];
+  analyses: AnalysisWithStep[];
 }
 
 export function MetricsChart({ analyses }: MetricsChartProps) {

@@ -92,7 +92,7 @@ export async function POST() {
 async function runAnalysis(analysisId: string, event: ChurnEvent) {
   updateAnalysis(analysisId, { status: "analyzing" });
   try {
-    const result = await analyzeChurn(event);
+    const result = await analyzeChurn(event, analysisId);
 
     if (!result.ok) {
       console.error("Simulation analysis failed:", result.error);
@@ -107,6 +107,7 @@ async function runAnalysis(analysisId: string, event: ChurnEvent) {
       executedActions: ai.executedActions,
       completedAt: ai.completedAt,
       processingTimeMs: ai.processingTimeMs,
+      pipelineMetadata: ai.pipelineMetadata,
     });
   } catch (error) {
     console.error("Simulation analysis failed:", error);

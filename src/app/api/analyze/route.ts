@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { AnalyzeRequestSchema, type ChurnEvent } from "@/lib/schemas/churn";
 import {
   createAnalysis,
   getAllAnalyses,
+  getPipelineStep,
   updateAnalysis,
 } from "@/lib/db/store";
 import { analyzeChurn } from "@/lib/gemini/agent";
@@ -30,8 +31,8 @@ export async function POST(req: NextRequest) {
     return streamAnalysis(analysis.id, parsed.data.event);
   }
 
-  // Run analysis in background — fire and forget
-  runAnalysisPipeline(analysis.id, parsed.data.event).catch(console.error);
+  // Run analysis in background — after() keeps the serverless function alive on Vercel
+  after(runAnalysisPipeline(analysis.id, parsed.data.event));
 
   return NextResponse.json(
     { analysisId: analysis.id, status: analysis.status },
@@ -40,7 +41,11 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET() {
-  return NextResponse.json(getAllAnalyses());
+  const analyses = getAllAnalyses().map((a) => ({
+    ...a,
+    pipelineStep: getPipelineStep(a.id),
+  }));
+  return NextResponse.json(analyses);
 }
 
 function streamAnalysis(analysisId: string, event: ChurnEvent) {
@@ -58,7 +63,7 @@ function streamAnalysis(analysisId: string, event: ChurnEvent) {
       updateAnalysis(analysisId, { status: "analyzing" });
 
       try {
-        const result = await analyzeChurn(event);
+        const result = await analyzeChurn(event, analysisId);
 
         if (!result.ok) {
           send({ type: "error", message: result.error });
@@ -73,6 +78,7 @@ function streamAnalysis(analysisId: string, event: ChurnEvent) {
           executedActions: ai.executedActions,
           completedAt: ai.completedAt,
           processingTimeMs: ai.processingTimeMs,
+          pipelineMetadata: ai.pipelineMetadata,
         });
 
         send({ type: "result", analysisId, analysis: ai });
@@ -99,7 +105,7 @@ function streamAnalysis(analysisId: string, event: ChurnEvent) {
 async function runAnalysisPipeline(analysisId: string, event: ChurnEvent) {
   updateAnalysis(analysisId, { status: "analyzing" });
   try {
-    const result = await analyzeChurn(event);
+    const result = await analyzeChurn(event, analysisId);
 
     if (!result.ok) {
       console.error("Analysis failed:", result.error);
@@ -114,6 +120,7 @@ async function runAnalysisPipeline(analysisId: string, event: ChurnEvent) {
       executedActions: ai.executedActions,
       completedAt: ai.completedAt,
       processingTimeMs: ai.processingTimeMs,
+      pipelineMetadata: ai.pipelineMetadata,
     });
   } catch (error) {
     console.error("Analysis pipeline failed:", error);

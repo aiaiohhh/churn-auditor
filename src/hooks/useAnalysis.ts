@@ -1,10 +1,14 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import type { AnalysisResult } from "@/lib/schemas/churn";
+import type { AnalysisResult, PipelineStep } from "@/lib/schemas/churn";
+
+export type AnalysisWithStep = AnalysisResult & {
+  pipelineStep?: PipelineStep;
+};
 
 export function useAnalysis() {
-  const [analyses, setAnalyses] = useState<AnalysisResult[]>([]);
+  const [analyses, setAnalyses] = useState<AnalysisWithStep[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const refreshRef = useRef(0);
@@ -13,7 +17,7 @@ export function useAnalysis() {
     try {
       const res = await fetch("/api/analyze");
       if (!res.ok) throw new Error("Failed to fetch analyses");
-      const data = (await res.json()) as AnalysisResult[];
+      const data = (await res.json()) as AnalysisWithStep[];
       setAnalyses(data);
       setError(null);
     } catch (err) {

@@ -3,7 +3,7 @@
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { AnalysisResult } from "@/lib/schemas/churn";
+import type { AnalysisWithStep } from "@/hooks/useAnalysis";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 
@@ -20,7 +20,7 @@ function formatMrr(mrr: number): string {
 }
 
 interface ChurnFeedProps {
-  analyses: AnalysisResult[];
+  analyses: AnalysisWithStep[];
   loading: boolean;
   selectedId: string | null;
   onSelect: (id: string) => void;
@@ -68,6 +68,9 @@ export function ChurnFeed({ analyses, loading, selectedId, onSelect }: ChurnFeed
           const status = statusConfig[analysis.status];
           const isActive = analysis.status === "analyzing" || analysis.status === "pending";
           const isSelected = analysis.id === selectedId;
+          const modelBadge = analysis.status === "complete" && analysis.pipelineMetadata
+            ? analysis.pipelineMetadata.diagnosisModel
+            : null;
 
           return (
             <button
@@ -96,6 +99,19 @@ export function ChurnFeed({ analyses, loading, selectedId, onSelect }: ChurnFeed
                       )}
                       {status.label}
                     </Badge>
+                    {modelBadge && (
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "shrink-0 text-[10px] px-1.5 py-0",
+                          modelBadge === "pro"
+                            ? "bg-gemini-purple/10 text-gemini-purple border-gemini-purple/30"
+                            : "bg-gemini-blue/10 text-gemini-blue border-gemini-blue/30"
+                        )}
+                      >
+                        {modelBadge === "pro" ? "Pro" : "Flash"}
+                      </Badge>
+                    )}
                   </div>
                   <div className="mt-1.5 flex items-center gap-3 text-xs text-muted-foreground">
                     <span className="font-mono font-semibold text-red-600">
