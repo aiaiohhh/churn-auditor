@@ -8,10 +8,10 @@ import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 
 const statusConfig = {
-  pending: { label: "Pending", className: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20" },
-  analyzing: { label: "Analyzing", className: "bg-blue-500/10 text-blue-400 border-blue-500/20" },
-  complete: { label: "Complete", className: "bg-green-500/10 text-green-400 border-green-500/20" },
-  failed: { label: "Failed", className: "bg-red-500/10 text-red-400 border-red-500/20" },
+  pending: { label: "Pending", className: "bg-yellow-500/10 text-yellow-600 border-yellow-500/30" },
+  analyzing: { label: "Analyzing", className: "bg-blue-500/10 text-blue-600 border-blue-500/30" },
+  complete: { label: "Complete", className: "bg-green-500/10 text-green-600 border-green-500/30" },
+  failed: { label: "Failed", className: "bg-red-500/10 text-red-600 border-red-500/30" },
 } as const;
 
 function formatMrr(mrr: number): string {
@@ -34,10 +34,10 @@ export function ChurnFeed({ analyses, loading, selectedId, onSelect }: ChurnFeed
           <div key={i} className="glass-card rounded-xl p-4">
             <div className="flex items-center justify-between">
               <div className="space-y-2">
-                <Skeleton className="h-4 w-32 bg-white/5" />
-                <Skeleton className="h-3 w-24 bg-white/5" />
+                <Skeleton className="h-4 w-32 bg-black/[0.04]" />
+                <Skeleton className="h-3 w-24 bg-black/[0.04]" />
               </div>
-              <Skeleton className="h-5 w-16 rounded-full bg-white/5" />
+              <Skeleton className="h-5 w-16 rounded-full bg-black/[0.04]" />
             </div>
           </div>
         ))}
@@ -98,7 +98,7 @@ export function ChurnFeed({ analyses, loading, selectedId, onSelect }: ChurnFeed
                     </Badge>
                   </div>
                   <div className="mt-1.5 flex items-center gap-3 text-xs text-muted-foreground">
-                    <span className="font-mono font-semibold text-red-400">
+                    <span className="font-mono font-semibold text-red-600">
                       {formatMrr(analysis.event.mrr)}/mo
                     </span>
                     <span className="text-border">|</span>
@@ -122,10 +122,10 @@ export function ChurnFeed({ analyses, loading, selectedId, onSelect }: ChurnFeed
                       className={cn(
                         "font-mono text-xs font-bold",
                         analysis.dossier.saveProbability >= 0.6
-                          ? "text-green-400"
+                          ? "text-green-600"
                           : analysis.dossier.saveProbability >= 0.3
-                            ? "text-yellow-400"
-                            : "text-red-400"
+                            ? "text-yellow-600"
+                            : "text-red-600"
                       )}
                     >
                       {Math.round(analysis.dossier.saveProbability * 100)}%

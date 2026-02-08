@@ -17,7 +17,7 @@ import {
 import { executeTool, type ToolCallResult } from "@/lib/tools/executor";
 import { analyzeChurnDemo } from "@/lib/gemini/demo-fallback";
 
-const PIPELINE_TIMEOUT_MS = 25_000;
+const PIPELINE_TIMEOUT_MS = 10_000;
 
 export async function analyzeChurn(
   event: ChurnEvent

@@ -14,7 +14,7 @@ const statusIcons: Record<string, { icon: React.ReactNode; className: string }> 
         <polyline points="12 6 12 12 16 14" />
       </svg>
     ),
-    className: "text-yellow-400",
+    className: "text-yellow-600",
   },
   executing: {
     icon: (
@@ -22,7 +22,7 @@ const statusIcons: Record<string, { icon: React.ReactNode; className: string }> 
         <path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" strokeLinecap="round" />
       </svg>
     ),
-    className: "text-blue-400",
+    className: "text-blue-600",
   },
   success: {
     icon: (
@@ -30,7 +30,7 @@ const statusIcons: Record<string, { icon: React.ReactNode; className: string }> 
         <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     ),
-    className: "text-green-400",
+    className: "text-green-600",
   },
   failed: {
     icon: (
@@ -38,7 +38,7 @@ const statusIcons: Record<string, { icon: React.ReactNode; className: string }> 
         <path d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     ),
-    className: "text-red-400",
+    className: "text-red-600",
   },
 };
 
@@ -99,10 +99,10 @@ export function ActionCenter({ analysis }: ActionCenterProps) {
                 variant="outline"
                 className={cn(
                   "text-[10px] capitalize",
-                  action.status === "success" && "bg-green-500/10 text-green-400 border-green-500/20",
-                  action.status === "failed" && "bg-red-500/10 text-red-400 border-red-500/20",
-                  action.status === "pending" && "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
-                  action.status === "executing" && "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                  action.status === "success" && "bg-green-500/10 text-green-600 border-green-500/30",
+                  action.status === "failed" && "bg-red-500/10 text-red-600 border-red-500/30",
+                  action.status === "pending" && "bg-yellow-500/10 text-yellow-600 border-yellow-500/30",
+                  action.status === "executing" && "bg-blue-500/10 text-blue-600 border-blue-500/30"
                 )}
               >
                 {action.status}

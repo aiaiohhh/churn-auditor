@@ -83,7 +83,7 @@ export function MetricsChart({ analyses }: MetricsChartProps) {
             <p
               className={cn(
                 "font-mono text-2xl font-bold",
-                avgSave >= 50 ? "text-green-400" : "text-yellow-400"
+                avgSave >= 50 ? "text-green-600" : "text-yellow-600"
               )}
             >
               {avgSave}%
