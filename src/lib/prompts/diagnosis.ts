@@ -1,3 +1,4 @@
+import { Type } from "@google/genai";
 import type { ChurnEvent } from "@/lib/schemas/churn";
 import {
   getCustomerContext,
@@ -47,15 +48,15 @@ export interface TriageResult {
 }
 
 export const TRIAGE_RESPONSE_SCHEMA = {
-  type: "object" as const,
+  type: Type.OBJECT,
   properties: {
-    worthDeepAnalysis: { type: "boolean" as const },
-    reason: { type: "string" as const },
+    worthDeepAnalysis: { type: Type.BOOLEAN },
+    reason: { type: Type.STRING },
     urgency: {
-      type: "string" as const,
+      type: Type.STRING,
       enum: ["urgent", "high", "medium", "low"],
     },
-    estimatedSaveProbability: { type: "number" as const },
+    estimatedSaveProbability: { type: Type.NUMBER },
   },
   required: [
     "worthDeepAnalysis",
@@ -95,10 +96,10 @@ For recommendedActions, use these types:
 }
 
 export const DOSSIER_RESPONSE_SCHEMA = {
-  type: "object" as const,
+  type: Type.OBJECT,
   properties: {
     primaryCause: {
-      type: "string" as const,
+      type: Type.STRING,
       enum: [
         "pricing",
         "bugs",
@@ -109,30 +110,30 @@ export const DOSSIER_RESPONSE_SCHEMA = {
         "other",
       ],
     },
-    confidence: { type: "number" as const },
+    confidence: { type: Type.NUMBER },
     evidence: {
-      type: "array" as const,
+      type: Type.ARRAY,
       items: {
-        type: "object" as const,
+        type: Type.OBJECT,
         properties: {
           source: {
-            type: "string" as const,
+            type: Type.STRING,
             enum: ["support_ticket", "usage_data", "exit_survey"],
           },
-          quote: { type: "string" as const },
-          relevance: { type: "number" as const },
+          quote: { type: Type.STRING },
+          relevance: { type: Type.NUMBER },
         },
         required: ["source", "quote", "relevance"],
       },
     },
-    saveProbability: { type: "number" as const },
+    saveProbability: { type: Type.NUMBER },
     recommendedActions: {
-      type: "array" as const,
+      type: Type.ARRAY,
       items: {
-        type: "object" as const,
+        type: Type.OBJECT,
         properties: {
           type: {
-            type: "string" as const,
+            type: Type.STRING,
             enum: [
               "linear_ticket",
               "winback_email",
@@ -141,15 +142,15 @@ export const DOSSIER_RESPONSE_SCHEMA = {
             ],
           },
           priority: {
-            type: "string" as const,
+            type: Type.STRING,
             enum: ["urgent", "high", "medium", "low"],
           },
-          description: { type: "string" as const },
+          description: { type: Type.STRING },
         },
         required: ["type", "priority", "description"],
       },
     },
-    reasoning: { type: "string" as const },
+    reasoning: { type: Type.STRING },
   },
   required: [
     "primaryCause",
