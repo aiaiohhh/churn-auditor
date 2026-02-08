@@ -9,20 +9,20 @@ import type { AnalysisResult, ChurnCause, Priority } from "@/lib/schemas/churn";
 import { cn } from "@/lib/utils";
 
 const causeColors: Record<ChurnCause, { bg: string; text: string; label: string }> = {
-  pricing: { bg: "bg-orange-500/10", text: "text-orange-400", label: "Pricing" },
-  bugs: { bg: "bg-red-500/10", text: "text-red-400", label: "Bugs" },
-  support: { bg: "bg-yellow-500/10", text: "text-yellow-400", label: "Support" },
-  competition: { bg: "bg-purple-500/10", text: "text-purple-400", label: "Competition" },
-  features: { bg: "bg-blue-500/10", text: "text-blue-400", label: "Missing Features" },
-  onboarding: { bg: "bg-cyan-500/10", text: "text-cyan-400", label: "Onboarding" },
-  other: { bg: "bg-gray-500/10", text: "text-gray-400", label: "Other" },
+  pricing: { bg: "bg-orange-500/10", text: "text-orange-600", label: "Pricing" },
+  bugs: { bg: "bg-red-500/10", text: "text-red-600", label: "Bugs" },
+  support: { bg: "bg-yellow-500/10", text: "text-yellow-600", label: "Support" },
+  competition: { bg: "bg-purple-500/10", text: "text-purple-600", label: "Competition" },
+  features: { bg: "bg-blue-500/10", text: "text-blue-600", label: "Missing Features" },
+  onboarding: { bg: "bg-cyan-500/10", text: "text-cyan-600", label: "Onboarding" },
+  other: { bg: "bg-gray-500/10", text: "text-gray-600", label: "Other" },
 };
 
 const priorityConfig: Record<Priority, { className: string; label: string }> = {
-  urgent: { className: "bg-red-500/10 text-red-400 border-red-500/20", label: "Urgent" },
-  high: { className: "bg-orange-500/10 text-orange-400 border-orange-500/20", label: "High" },
-  medium: { className: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20", label: "Medium" },
-  low: { className: "bg-blue-500/10 text-blue-400 border-blue-500/20", label: "Low" },
+  urgent: { className: "bg-red-500/10 text-red-600 border-red-500/30", label: "Urgent" },
+  high: { className: "bg-orange-500/10 text-orange-600 border-orange-500/30", label: "High" },
+  medium: { className: "bg-yellow-500/10 text-yellow-600 border-yellow-500/30", label: "Medium" },
+  low: { className: "bg-blue-500/10 text-blue-600 border-blue-500/30", label: "Low" },
 };
 
 const sourceConfig: Record<string, { label: string; icon: string }> = {
@@ -93,7 +93,7 @@ export function DossierView({ analysis }: DossierViewProps) {
             <path d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
-        <p className="text-sm font-medium text-red-400">Analysis Failed</p>
+        <p className="text-sm font-medium text-red-600">Analysis Failed</p>
         <p className="mt-1 text-xs text-muted-foreground">
           Something went wrong. Try simulating another event.
         </p>
@@ -117,7 +117,7 @@ export function DossierView({ analysis }: DossierViewProps) {
           <p className="text-xs text-muted-foreground">{analysis.event.customerEmail}</p>
         </div>
         <div className="text-right">
-          <p className="font-mono text-lg font-bold text-red-400">
+          <p className="font-mono text-lg font-bold text-red-600">
             ${analysis.event.mrr}
             <span className="text-xs font-normal text-muted-foreground">/mo</span>
           </p>
@@ -191,10 +191,10 @@ export function DossierView({ analysis }: DossierViewProps) {
               className={cn(
                 "font-mono text-xl font-bold",
                 savePercent >= 60
-                  ? "text-green-400"
+                  ? "text-green-600"
                   : savePercent >= 30
-                    ? "text-yellow-400"
-                    : "text-red-400"
+                    ? "text-yellow-600"
+                    : "text-red-600"
               )}
             >
               {savePercent}%

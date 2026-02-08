@@ -76,8 +76,8 @@ export function SimulateButton({ onSimulate }: SimulateButtonProps) {
       disabled={isSimulating}
       size="lg"
       className={cn(
-        "simulate-glow relative h-14 w-full rounded-xl bg-gradient-to-r from-red-600 to-red-500 text-base font-bold text-white",
-        "transition-all duration-300 hover:from-red-500 hover:to-red-400",
+        "simulate-glow relative h-14 w-full rounded-xl bg-primary text-base font-bold text-white",
+        "transition-all duration-300 hover:bg-gemini-deep",
         "disabled:opacity-70 disabled:cursor-not-allowed",
         isSimulating && "animate-pulse"
       )}

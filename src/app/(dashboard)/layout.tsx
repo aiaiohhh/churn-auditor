@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function DashboardLayout({
   children,
 }: {
@@ -10,27 +12,29 @@ export default function DashboardLayout({
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
           <div className="flex items-center gap-3">
             {/* Logo icon */}
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-500/10 ring-1 ring-red-500/20">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                className="h-5 w-5 text-red-400"
-                stroke="currentColor"
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-              </svg>
-            </div>
-            <div>
-              <h1 className="text-lg font-bold tracking-tight text-foreground">
-                ChurnAuditor
-              </h1>
-              <p className="text-[11px] leading-none text-muted-foreground">
-                AI-Powered Churn Recovery
-              </p>
-            </div>
+            <Link href="/" className="flex items-center gap-3 transition-opacity hover:opacity-80">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gemini-blue/10 ring-1 ring-gemini-blue/20">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  className="h-5 w-5 text-gemini-blue"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                </svg>
+              </div>
+              <div>
+                <h1 className="text-lg font-bold tracking-tight text-foreground">
+                  ChurnAuditor
+                </h1>
+                <p className="text-[11px] leading-none text-muted-foreground">
+                  AI-Powered Churn Recovery
+                </p>
+              </div>
+            </Link>
           </div>
 
           {/* Right side indicators */}
