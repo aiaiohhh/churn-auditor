@@ -18,9 +18,9 @@ export function FinalCTA() {
             <div className="relative rounded-3xl bg-background/90 backdrop-blur-xl">
               <div className="flex flex-col items-center gap-8 px-8 py-20 text-center sm:px-16">
                 <h2 className="text-4xl font-bold tracking-tight sm:text-5xl">
-                  Stop Losing Customers.
+                  Every Cancellation Tells a Story.
                   <br />
-                  <span className="text-gradient-gemini">Start Recovering Revenue.</span>
+                  <span className="text-gradient-gemini">We Turn It Into a Comeback.</span>
                 </h2>
 
                 <p className="max-w-lg text-lg text-muted-foreground">

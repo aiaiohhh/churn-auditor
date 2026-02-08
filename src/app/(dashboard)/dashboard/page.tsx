@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChurnFeed } from "@/components/churn/ChurnFeed";
 import { DossierView } from "@/components/churn/DossierView";
-import { ActionCenter } from "@/components/churn/ActionCenter";
+import { ActionExecutor } from "@/components/churn/ActionExecutor";
 import { SimulateButton } from "@/components/churn/SimulateButton";
 import { MetricsChart } from "@/components/churn/MetricsChart";
 import { useAnalysis } from "@/hooks/useAnalysis";
@@ -77,7 +77,7 @@ export default function DashboardPage() {
               <DossierView analysis={selectedAnalysis} />
             </TabsContent>
             <TabsContent value="actions" className="mt-4">
-              <ActionCenter analysis={selectedAnalysis} />
+              <ActionExecutor analysis={selectedAnalysis} />
             </TabsContent>
           </Tabs>
         </div>
