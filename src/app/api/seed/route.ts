@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { v4 as uuid } from "uuid";
 import type { AnalysisResult } from "@/lib/schemas/churn";
 import { updateAnalysis, createAnalysis, getAllAnalyses } from "@/lib/db/store";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 const SEED_ANALYSES: Omit<AnalysisResult, "id">[] = [
   {
@@ -139,7 +140,10 @@ const SEED_ANALYSES: Omit<AnalysisResult, "id">[] = [
   },
 ];
 
-export async function POST() {
+export async function POST(req: NextRequest) {
+  const blocked = applyRateLimit(req, "seed");
+  if (blocked) return blocked;
+
   // Avoid duplicating seeds if already present
   const existing = getAllAnalyses();
   if (existing.length > 0) {

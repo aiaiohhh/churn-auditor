@@ -8,8 +8,12 @@ import { getAnalysis, updateAnalysis } from "@/lib/db/store";
 import { createLinearTicket } from "@/lib/integrations/linear";
 import { sendWinbackEmail } from "@/lib/integrations/email";
 import { sendSlackAlert } from "@/lib/integrations/slack";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
+  const blocked = applyRateLimit(req, "actions");
+  if (blocked) return blocked;
+
   let body: unknown;
   try {
     body = await req.json();

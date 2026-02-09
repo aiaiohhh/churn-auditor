@@ -7,8 +7,12 @@ import {
   updateAnalysis,
 } from "@/lib/db/store";
 import { analyzeChurn } from "@/lib/gemini/agent";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
+  const blocked = applyRateLimit(req, "analyzePost");
+  if (blocked) return blocked;
+
   let body: unknown;
   try {
     body = await req.json();
@@ -40,7 +44,10 @@ export async function POST(req: NextRequest) {
   );
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const blocked = applyRateLimit(req, "analyzeGet");
+  if (blocked) return blocked;
+
   const analyses = getAllAnalyses().map((a) => ({
     ...a,
     pipelineStep: getPipelineStep(a.id),

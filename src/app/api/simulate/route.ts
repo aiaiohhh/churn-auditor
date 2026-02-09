@@ -1,8 +1,9 @@
-import { NextResponse, after } from "next/server";
+import { type NextRequest, NextResponse, after } from "next/server";
 import { v4 as uuid } from "uuid";
 import type { ChurnEvent } from "@/lib/schemas/churn";
 import { createAnalysis, updateAnalysis } from "@/lib/db/store";
 import { analyzeChurn } from "@/lib/gemini/agent";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 interface CustomerProfile {
   name: string;
@@ -76,7 +77,10 @@ function generateChurnEvent(): ChurnEvent {
   };
 }
 
-export async function POST() {
+export async function POST(req: NextRequest) {
+  const blocked = applyRateLimit(req, "simulate");
+  if (blocked) return blocked;
+
   const event = generateChurnEvent();
   const analysis = createAnalysis(event);
 
