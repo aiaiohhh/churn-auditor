@@ -4,6 +4,7 @@ import { ChurnAuditorDemoV2 } from "./ChurnAuditorDemoV2";
 import { ChurnAuditorDemoV3, V3_TOTAL } from "./ChurnAuditorDemoV3";
 import { ChurnAuditorDemoV4, V4_TOTAL } from "./ChurnAuditorDemoV4";
 import { ChurnAuditorDemoV5, V5_TOTAL } from "./ChurnAuditorDemoV5";
+import { ChurnAuditorDemoV6, V6_TOTAL } from "./ChurnAuditorDemoV6";
 
 const FPS = 30;
 
@@ -63,6 +64,14 @@ export const RemotionRoot: React.FC = () => {
         id="ChurnAuditorDemoV5"
         component={ChurnAuditorDemoV5}
         durationInFrames={V5_TOTAL}
+        fps={FPS}
+        width={1920}
+        height={1080}
+      />
+      <Composition
+        id="ChurnAuditorDemoV6"
+        component={ChurnAuditorDemoV6}
+        durationInFrames={V6_TOTAL}
         fps={FPS}
         width={1920}
         height={1080}
