@@ -6,3 +6,5 @@ node_modules
 *.tsbuildinfo
 .vercel
 demo-video/out
+.claude/
+.archive/
