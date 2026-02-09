@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAnalysis, getPipelineStep } from "@/lib/db/store";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const blocked = applyRateLimit(req, "analyzeGetById");
+  if (blocked) return blocked;
+
   const { id } = await params;
 
   const analysis = getAnalysis(id);

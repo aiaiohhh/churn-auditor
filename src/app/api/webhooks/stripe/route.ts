@@ -4,6 +4,7 @@ import { v4 as uuid } from "uuid";
 import type { ChurnEvent } from "@/lib/schemas/churn";
 import { createAnalysis, updateAnalysis } from "@/lib/db/store";
 import { analyzeChurn } from "@/lib/gemini/agent";
+import { applyRateLimit } from "@/lib/rate-limit";
 
 function getStripe(): Stripe {
   return new Stripe(process.env.STRIPE_SECRET_KEY ?? "sk_test_placeholder", {
@@ -12,6 +13,9 @@ function getStripe(): Stripe {
 }
 
 export async function POST(req: NextRequest) {
+  const blocked = applyRateLimit(req, "stripeWebhook");
+  if (blocked) return blocked;
+
   const body = await req.text();
   const sig = req.headers.get("stripe-signature");
 
